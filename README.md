@@ -20,6 +20,6 @@ Still testing the software. Also looking into using a larger Oled display and cr
 
 ![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/oled_large.jpeg)
 
-![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/rover_monitor_pcb_r2.jpeg)
+![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/rover_monitor_r2_front.jpg)
 
 
