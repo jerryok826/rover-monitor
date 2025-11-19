@@ -1,6 +1,6 @@
 # rover-monitor
 Rover monitor is a simple info display for the JPL's open-source-rover project
-# Testing my rover.
+# Initial Rover Testing
 ![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/outside_testing_2.png)
 
 # Rover info monitor.
