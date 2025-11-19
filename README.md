@@ -3,6 +3,9 @@ Rover monitor is a simple info display for the JPL's open-source-rover project
 # Testing my rover.
 ![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/outside_testing_2.png)
 
+# Rover info monitor.
+![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/prototype_1.jpeg)
+
 # eFuse Voltmeter in fault
 ![Alt text](https://github.com/jerryok826/eFuse_voltmeter/blob/main/Pictures/eFuse_volt_fault.jpeg)
 
