@@ -1,6 +1,6 @@
 # rover-monitor
 Rover monitor is a simple info display for the JPL's open-source-rover project
-# Initial Rover Testing
+# My initial Rover Testing
 ![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/outside_testing_2.png)
 
 # Rover info monitor.
@@ -16,7 +16,7 @@ Features:
 4. Voltage and current monitoring with audio alarm on fault.
 
 ### Project Status
-The project is still working on sofware. Looking into using a large Oled and creating a pcb. 
+Still testing the sofware. Also looking into using a larger Oled display and creating a pcb. 
 
 ![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/oled_large.jpeg)
 
