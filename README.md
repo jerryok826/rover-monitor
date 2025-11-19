@@ -16,7 +16,7 @@ Features:
 4. Voltage and current monitoring with audio alarm on fault.
 
 ### Project Status
-Still testing the software. Also looking into using a larger Oled display and creating a pcb. 
+Still testing the software. Also looking into using a larger Oled display and creating a pcb. The larger Oled may to too big?
 
 ![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/oled_large.jpeg)
 
