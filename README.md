@@ -15,8 +15,6 @@ Features:
 3. Rover ROS run and stop button.
 4. Voltage and current monitoring with audio alarm on fault.
 
-When an over voltage or an over current event happens the board will disable its output. The fault state is latched until the control buttons is pressed. Apond a fault an audio alarm is also actived and a fault LEDs is lite. The fault value is indicted by its red measurement value and the fault RED led is lite. A fault is cleared by pressing the adjusement button. The output button needs to be press again to reable the boards output.
- 
 ### Project Status
 The project is still working on sofware. Looking into using a large Oled and creating a pcb. 
 
