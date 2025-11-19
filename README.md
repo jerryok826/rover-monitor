@@ -20,6 +20,6 @@ The project is still working on sofware. Looking into using a large Oled and cre
 
 ![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/oled_large.jpeg)
 
-![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/rover_monitor_r2.jpeg)
+![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/rover_monitor_r2.jpg)
 
 
