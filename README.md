@@ -19,4 +19,5 @@ When an over voltage or an over current event happens the board will disable its
  
 ### Project Status
 The project is still working on sofware. Looking into using a large Oled and creating a pcb. 
+![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/oled_large.jpeg)
 
