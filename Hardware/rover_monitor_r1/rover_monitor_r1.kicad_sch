@@ -4172,7 +4172,7 @@
 	)
 	(wire
 		(pts
-			(xy 118.11 151.13) (xy 118.11 152.4)
+			(xy 118.11 146.05) (xy 118.11 152.4)
 		)
 		(stroke
 			(width 0)
@@ -5323,93 +5323,6 @@
 			(project "rover_monitor_r1"
 				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55"
 					(reference "#PWR69")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R_Small_US")
-		(at 118.11 148.59 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "41e2ed20-f1b3-4fbf-8d6a-4571201ec8d4")
-		(property "Reference" "R5"
-			(at 113.792 147.574 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "390R"
-			(at 112.014 151.13 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0805_2012Metric_Pad1.20x1.40mm_HandSolder"
-			(at 118.11 148.59 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 118.11 148.59 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "RES 100 OHM 1% 1/8W 0805"
-			(at 118.11 148.59 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Vendor" "Digikey"
-			(at 118.11 148.59 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Vendor Part#" "RMCF0805FT100RCT-ND "
-			(at 118.11 148.59 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(pin "1"
-			(uuid "70f432fc-72dc-4659-b46f-019de3da0268")
-		)
-		(pin "2"
-			(uuid "0d754346-f91b-4c0e-82d7-309e2a1dbaf2")
-		)
-		(instances
-			(project "rover_monitor_r1"
-				(path "/e63e39d7-6ac0-4ffd-8aa3-1841a4541b55"
-					(reference "R5")
 					(unit 1)
 				)
 			)
