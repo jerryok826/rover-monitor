@@ -18,8 +18,7 @@ Features:
 ### Project Status
 Still testing the software. Also looking into using a larger Oled display and creating a pcb. The black bar is from the shutter effect and is normally not seen.
 
-![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/oled_large.jpeg)
+![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/prototype_1.jpeg)
 
-![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/rover_monitor_r2_front.jpg)
 
 
