@@ -1,6 +1,6 @@
 # Define the source files and the output executable name
 TARGET    = rover_monitor_12
-SOURCES   = rover_monitor_12.c ina260.c
+SOURCES   = rover_monitor_12.c ina260.c os_calls.c
 CC        = gcc
 CFLAGS    = -O2
 LIBS      = -lgpiod

@@ -16,9 +16,24 @@ static int read_register(int i2c_fd, uint8_t reg, int16_t *value) {
     return 0;
 }
 
+#define DEV_ID 0x5449
+
 int ina260_init(int i2c_fd) {
+    int16_t raw=0;
+    int rc=0;
+
     // No specific init needed for default config
-    return 0;
+    if ((rc=read_register(i2c_fd, INA260_REG_MANUF_ID, &raw)) == 0) {
+        if (raw == DEV_ID) {
+            printf("ina260 ID 0x%04X Match 0x%04X\n", raw, DEV_ID);
+            return 0;
+        } else{
+            printf("ina260 ID 0x%04X error! should be: 0x%04X\n", raw, DEV_ID);
+            return 1;
+        }
+    }  
+    printf("%s(%d) reg[0x%02X] read ERROR! %d\n", __func__,__LINE__,INA260_REG_MANUF_ID, rc);
+    return 2;
 }
 
 float ina260_read_current_mA(int i2c_fd) {

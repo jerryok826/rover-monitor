@@ -12,6 +12,7 @@
 #define INA260_REG_POWER     0x03
 #define INA260_REG_MASK_EN   0x06
 #define INA260_REG_ALERT     0x07
+#define INA260_REG_MANUF_ID  0xFE
 
 int ina260_init(int i2c_fd);
 float ina260_read_current_mA(int i2c_fd);

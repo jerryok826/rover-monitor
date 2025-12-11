@@ -63,6 +63,11 @@ sudo install -m 0755 ./pi_oled_shutdown_monitor /usr/local/bin/pi_oled_shutdown_
 #include <pthread.h>   // Required for pthreads
 
 #include "ina260.h"
+#include "os_calls.h"
+
+#define VOLATGE_HIGH_LIMIT (16000.0)  // 16 volts
+#define VOLATGE_LOW_LIMIT  (12000.0)  // 12 volts
+#define CURRENT_HIGH_LIMIT  (7000.0)  // 7 amps
 
 #define OLED_I2C_DEV   "/dev/i2c-1"
 #define OLED_ADDR      0x3c // 0x3C
@@ -75,11 +80,8 @@ sudo install -m 0755 ./pi_oled_shutdown_monitor /usr/local/bin/pi_oled_shutdown_
 #define ALARM_PIN           16
 #define RUN_STOP_BUTTON_PIN 21
 
-//#define     int led1 = 16; //13; //17;
-//#define    int led2 = 20; // 13; //17;
-//#define    int btn = 21;  // 19; //18;
-
 static int i2c_ina260_fd;
+static int ina260_online=0;
 
 // ======== Simple logging ========
 static void simple_logf(const char *fmt, ...) {
@@ -148,14 +150,18 @@ static int ssd1306_init(void) {
     if (ssd1306_cmd(0x40) < 0) return -1;               // start line
     if (ssd1306_cmd2(0x8D, 0x14) < 0) return -1;        // charge pump
     if (ssd1306_cmd2(0x20, 0x00) < 0) return -1;        // memory mode: horizontal
-    if (ssd1306_cmd(0xA1) < 0) return -1;               // seg remap
-    if (ssd1306_cmd(0xC8) < 0) return -1;               // COM scan dec
+
+    // rotated the disply around
+    if (ssd1306_cmd(0xA1) < 0) return -1;               // seg remap, cmd 0xA0 sets the segment remap to normal, while 0xA1 reverses it.
+    if (ssd1306_cmd(0xC8) < 0) return -1;               // COM scan dec, cmd 0xC0 sets the scan direction to normal, while 0xC8 reverses it.
+
     if (ssd1306_cmd2(0xDA, 0x12) < 0) return -1;        // compins
     if (ssd1306_cmd2(0x81, 0xCF) < 0) return -1;        // contrast
     if (ssd1306_cmd2(0xD9, 0xF1) < 0) return -1;        // precharge
     if (ssd1306_cmd2(0xDB, 0x40) < 0) return -1;        // vcom detect
     if (ssd1306_cmd(0xA4) < 0) return -1;               // entire display on (resume)
     if (ssd1306_cmd(0xA6) < 0) return -1;               // normal display
+ 
     if (ssd1306_cmd(0xAF) < 0) return -1;               // display on
     memset(oled_buf, 0x00, sizeof(oled_buf));
     return 0;
@@ -500,11 +506,14 @@ static void draw_status_screen(const char *ip, const char *ssid, double tempC, c
 //    draw_text_prop(0, y, ubuf); y += 12;
 
 //    draw_text_prop(0, y, "Btn: Shutdown"); // hint line
-    char vbuf[32]; snprintf(vbuf,sizeof(vbuf),"Bat: %3.1fV, %3.2fA", voltage_mv/1000.0,current_ma/1000.0);
+    char vbuf[32]; snprintf(vbuf,sizeof(vbuf),"Bat:  %3.2fV,   %3.2fA", voltage_mv/1000.0,current_ma/1000.0);
     draw_text_prop(0, y, vbuf); y += 12;
 
-    char sbuf[32]; snprintf(sbuf,sizeof(sbuf),"%s",status_line);
-    draw_text_prop(0, y, sbuf); y += 12;
+//    char sbuf[32]; snprintf(sbuf,sizeof(sbuf),"%s",status_line);
+//    draw_text_prop(0, y, sbuf); y += 12;
+
+    char rbuf[32]; snprintf(rbuf,sizeof(rbuf),"%s","Rover App: Off");
+    draw_text_prop(0, y, rbuf); y += 12;
 
     // Optional: underline separator
 //    ssd1306_hline(0, 10, 128, true);
@@ -520,8 +529,8 @@ static void draw_message_center(const char *msg) {
     ssd1306_update();
 }
 
-int ina260_setup() {
-
+int ina260_setup() 
+{
     i2c_ina260_fd = open("/dev/i2c-1", O_RDWR);
     if (i2c_ina260_fd  < 0) {
         perror("Unable to open I2C device");
@@ -537,6 +546,7 @@ int ina260_setup() {
         printf("INA260 init failed\n");
         return 3;
     }
+    return 0;
 }
 
 // Shared flag to control the background sound thread
@@ -571,6 +581,8 @@ void* background_sound_thread(void* arg) {
     return NULL;
 }
 
+
+
 // ======== Main loop ========
 int main(void) {
     signal(SIGINT, sigint_handler);
@@ -584,7 +596,12 @@ int main(void) {
         return 1;
     }
 
-    (void)ina260_setup();
+    ina260_online = 0;
+    if (ina260_setup() == 0){
+        ina260_online = 1;
+    } else {
+        fprintf(stderr, "ina260 init failed.\n");
+    }
 
     if (ssd1306_init() < 0) {
         fprintf(stderr, "SSD1306 init failed.\n");
@@ -695,15 +712,18 @@ int main(void) {
                     if (rover_run_state != 0) {
                        printf("Stop Rover\n");
                        rover_run_state = 0;
-                       system_call_status = system("/home/jerryo/rover_monitor/stop_rover.sh");
-//                       system_call_status = system("/usr/local/bin/stop_rover.sh");
+//                       stop_rover();
+
                        printf("'stop_rover.sh' script finished.\n");
                        gpio_set_green_led(0);
                     } else {
                        printf("Start Rover\n");
                        rover_run_state = 1;
-                       system_call_status = system("/home/jerryo/rover_monitor/start_rover.sh");
-//                       system_call_status = system("/usr/local/bin/start_rover.sh");
+//                       stop_rover(); // make sure everthing thing is stopped
+                       usleep(10 * 1000); // 10 millsec ?
+
+                       start_rover();
+
                        printf("'start_rover.sh' script finished.\n");
                        gpio_set_green_led(1);
                     }
@@ -739,25 +759,35 @@ int main(void) {
 
         fmt_uptime(upbuf, sizeof upbuf);
 
-#define VOLATGE_HIGH_LIMIT (14000.0)  //       (16000.0) // 16 volts
-#define VOLATGE_LOW_LIMIT  (12000.0) // 12 volts
-#define CURRENT_HIGH_LIMIT  (5000.0)  // 5 amps
+        voltage_mv = 0.0; current_ma = 0.0;
+        if (ina260_online) { // check if ina260 is connedted. 
+            get_ina260_status(&voltage_mv, &current_ma); // ina260_str
+//            printf("Volts: %3.3fmV, Current: %3.3fmA\n", voltage_mv, current_ma);
+            sound_enabled = false;
+        } else {
+//            printf("Status:ina260 off line\n");
+            strcpy(status_line,"Status:ina260 off line");
+        }
 
-        get_ina260_status(&voltage_mv, &current_ma); // ina260_str
+        if (ina260_online == 1) {
         if ((voltage_mv < VOLATGE_LOW_LIMIT) && (tick_cntr&1)) {
         //    printf("Voltage fault: %3.3f V\n",voltage_mv);
             sound_enabled = true;
             changed = true; // ??
             strcpy(status_line,"Under Voltage Fault");
+            // Should we do something else here? ie shut down ROS2??
         } else  if ((voltage_mv > VOLATGE_HIGH_LIMIT ) && (tick_cntr&1)) {
             sound_enabled = true;
             strcpy(status_line,"Over Voltage Fault");
+            // Should we do something else here? ie shut down ROS2??
         } else if ((current_ma > CURRENT_HIGH_LIMIT ) && (tick_cntr&1)) {
             sound_enabled = true;
             strcpy(status_line,"Over Current Fault");
+            // Should we do something else here? ie shut down ROS2??
         } else {
             sound_enabled = false;
             strcpy(status_line,"Status: Okay");
+        }
         }
 
         if (changed) {

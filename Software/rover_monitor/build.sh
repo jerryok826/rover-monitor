@@ -7,7 +7,7 @@
 
 #gcc -O2 -o rover_monitor_10 rover_monitor_10.c ina260.c -lgpiod
 
-code_to_build='gcc -O2 -o rover_monitor_12 rover_monitor_12.c ina260.c -lgpiod'
+code_to_build='gcc -O2 -o rover_monitor_12 rover_monitor_12.c os_calls.c ina260.c -lgpiod'
 
 echo "Build: $code_to_build"
 $code_to_build
