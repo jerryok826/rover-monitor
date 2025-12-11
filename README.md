@@ -16,7 +16,7 @@ Features:
 4. Voltage and current monitoring with audio alarm on fault.
 
 ### Project Status
-Still updating and testing the software. Below is the original prototype version.
+Still updating and testing the software. Need to add instructions for adding the code to systemctl so it runs from bootup. Also need SW improvement on the Rover ROS start stop support. Below is the original prototype version.
 
 ![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/prototype_1.jpeg)
 
