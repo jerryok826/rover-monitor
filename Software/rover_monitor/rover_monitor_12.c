@@ -397,6 +397,25 @@ draw_text_prop (int x, int y, const char *s)
 
 // ======== System info helpers ========
 static int
+get_hostname (char *out, size_t outlen)
+{
+  int rc = -1;
+
+  memset(out,0,outlen);
+
+  // Call gethostname() to retrieve the name
+  if (gethostname(out, outlen) == 0) {
+//       printf("Local Hostname: %s\n", out);
+        rc = 0;
+  } else {
+        // If gethostname fails, print an error message
+        perror("gethostname failed");
+        return rc;
+  }
+  return rc;
+}
+
+static int
 get_ip_address (char *out, size_t outlen)
 {
   struct ifaddrs *ifaddr, *ifa;
@@ -618,17 +637,21 @@ char status_line[32] = { "Status: Okay" };
 
 // ======== UI helpers ========
 static void
-draw_status_screen (const char *ip, const char *ssid, double tempC, const char *uptime,
+draw_status_screen (const char *hostname, const char *ip, const char *ssid, double tempC, const char *uptime,
                     double voltage_mv, double current_ma)
 {
   ssd1306_clear ();
   int y = 0;
 
+  draw_text_prop (0, y, "Host: ");
+  draw_text_prop (34, y, hostname && *hostname ? hostname : "—");
+
+  y += 12;
   draw_text_prop (0, y, "IP: ");
   draw_text_prop (24, y, ip && *ip ? ip : "—");
-  y += 12;
-  draw_text_prop (0, y, "SSID: ");
-  draw_text_prop (34, y, ssid && *ssid ? ssid : "—");
+
+//  draw_text_prop (0, y, "SSID: ");
+//  draw_text_prop (34, y, ssid && *ssid ? ssid : "—");
   y += 12;
 
   // char tbuf[32]; snprintf(tbuf, sizeof tbuf, "CPU: %.1f\xC2\xB0""C", tempC);
@@ -759,6 +782,9 @@ main (void)
     return 1;
   }
 
+  char hostname[50];
+  get_hostname (hostname, sizeof(hostname));
+
 #if 0
   simple_logf ("Service started. Button GPIO%d, LED GPIO%d, OLED on %s addr 0x%02X",
                BUTTON_PIN, LED_PIN, OLED_I2C_DEV, OLED_ADDR);
@@ -802,7 +828,7 @@ main (void)
   fmt_uptime (upbuf, sizeof upbuf);
   get_ina260_status (&voltage_mv, &current_ma);
 
-  draw_status_screen (ip, ssid, tempC, upbuf, voltage_mv, current_ma);
+  draw_status_screen (hostname, ip, ssid, tempC, upbuf, voltage_mv, current_ma);
   strncpy (last_ip, ip, sizeof last_ip);
   strncpy (last_ssid, ssid, sizeof last_ssid);
   last_tempC = tempC;
@@ -962,14 +988,14 @@ main (void)
     }
 
     if (changed) {
-      draw_status_screen (last_ip, last_ssid, last_tempC, upbuf, voltage_mv, current_ma);
+      draw_status_screen (hostname,last_ip, last_ssid, last_tempC, upbuf, voltage_mv, current_ma);
     }
     else {
       // Still refresh once every ~10 seconds to keep uptime current
       static int counter = 0;
       counter = (counter + 1) % 10;
       if (counter == 0)
-        draw_status_screen (last_ip, last_ssid, last_tempC, upbuf, 1200.0, 500.0);
+        draw_status_screen (hostname,last_ip, last_ssid, last_tempC, upbuf, 1200.0, 500.0);
     }
     tick_cntr++;
   }
