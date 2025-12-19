@@ -1,7 +1,7 @@
 # Rover Monitor
 Rover monitor is a simple info display for the JPL's open-source-rover project
 # My initial Rover Testing
-![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/outdoor_lawn.jpg)
+![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/rover_lawn_1.jpg)
 
 # Rover info monitor.
 ![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/oled_hostname.jpeg)
