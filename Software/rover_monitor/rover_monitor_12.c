@@ -64,6 +64,7 @@
 #define RUN_STOP_BUTTON_PIN 21
 static int i2c_ina260_fd;
 static int ina260_online = 0;
+static int rover_run_state = 0;
 
 // ======== Simple logging ========
 static void
@@ -675,7 +676,11 @@ draw_status_screen (const char *hostname, const char *ip, const char *ssid, doub
 //    draw_text_prop(0, y, sbuf); y += 12;
 
   char rbuf[32];
-  snprintf (rbuf, sizeof (rbuf), "%s", "Rover App: Off");
+  if (rover_run_state) {
+     snprintf (rbuf, sizeof (rbuf), "%s", "Rover App:  On");
+  } else {
+     snprintf (rbuf, sizeof (rbuf), "%s", "Rover App:  Off");
+  }
   draw_text_prop (0, y, rbuf);
   y += 12;
 
@@ -757,6 +762,13 @@ main (void)
   signal (SIGINT, sigint_handler);
   signal (SIGTERM, sigint_handler);
 
+  if (is_raspberry_pi()) {
+        printf("Running on a Raspberry Pi.\n");
+  } else {
+        printf("Not running on a Raspberry Pi. Bye\n");
+        return 1;
+  }
+
   pthread_t sound_tid;
 
   // Create the background sound thread
@@ -818,7 +830,7 @@ main (void)
   float voltage_mv = 0.0, current_ma = 0.0;
   char upbuf[32] = { 0 };
   int tick_cntr = 0;
-  int rover_run_state = 0;
+//  int rover_run_state = 0;
 
   // Initial read
   get_ip_address (ip, sizeof ip);
@@ -886,7 +898,7 @@ main (void)
           if (rover_run_state != 0) {
             printf ("Stop Rover\n");
             rover_run_state = 0;
-//                       stop_rover();
+            stop_rover();
 
             printf ("'stop_rover.sh' script finished.\n");
             gpio_set_green_led (0);

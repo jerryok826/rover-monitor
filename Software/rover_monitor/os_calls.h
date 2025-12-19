@@ -8,5 +8,6 @@ int start_rover(void);
 int stop_rover(void);
 int os_reboot(void);
 int os_shutdown(void);
+int is_raspberry_pi();
 
 #endif
