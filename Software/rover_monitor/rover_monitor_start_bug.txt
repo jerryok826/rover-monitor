@@ -1,0 +1,95 @@
+(venv) jerryo@rover:~/rover_monitor$ 
+(venv) jerryo@rover:~/rover_monitor$ 
+(venv) jerryo@rover:~/rover_monitor$ 
+(venv) jerryo@rover:~/rover_monitor$ sudo systemctl status ip2oled_monitor_bonnet.service
+● ip2oled_monitor_bonnet.service - ip2oled monitor bonnet
+     Loaded: loaded (/etc/systemd/system/ip2oled_monitor_bonnet.service; enabled; preset: enabled)
+     Active: active (running) since Fri 2025-12-26 09:28:12 PST; 24h ago
+   Main PID: 1339 (rover_monitor_1)
+      Tasks: 2 (limit: 8673)
+     Memory: 31.8M (peak: 53.7M)
+        CPU: 30min 23.524s
+     CGroup: /system.slice/ip2oled_monitor_bonnet.service
+             └─1339 /usr/local/bin/rover_monitor_12
+
+Dec 27 09:30:05 rover rover_monitor_12[1339]: Sound: OFF (paused)
+Dec 27 09:30:05 rover rover_monitor_12[1339]: RS Button pressed: ??
+Dec 27 09:30:10 rover rover_monitor_12[2469]: Package 'osr_bringup' not found: "package 'osr_bringup' not found, searching: ['/opt/ros/jazzy>
+Dec 27 09:30:12 rover rover_monitor_12[1339]: Start Rover
+Dec 27 09:30:12 rover rover_monitor_12[1339]: 'start_rover.sh' script finished.
+Dec 27 09:30:12 rover rover_monitor_12[1339]: RS Button pressed: ??
+Dec 27 09:30:15 rover rover_monitor_12[1339]: Stop Rover
+Dec 27 09:30:15 rover rover_monitor_12[1339]: 'stop_rover.sh' script finished.
+Dec 27 09:30:15 rover rover_monitor_12[1339]: RS Button pressed: ??
+Dec 27 09:30:17 rover rover_monitor_12[2490]: Package 'osr_bringup' not found: "package 'osr_bringup' not found, searching: ['/opt/ros/jazzy>
+lines 1-20/20 (END)
+
+===================  basic start up ===========================
+(venv) jerryo@rover:~$ 
+(venv) jerryo@rover:~$  sudo systemctl status ip2oled_monitor_bonnet.service
+[sudo] password for jerryo: 
+● ip2oled_monitor_bonnet.service - ip2oled monitor bonnet
+     Loaded: loaded (/etc/systemd/system/ip2oled_monitor_bonnet.service; enabled; preset: enabled)
+     Active: active (running) since Sat 2025-12-27 09:56:26 PST; 1min 38s ago
+   Main PID: 1354 (rover_monitor_1)
+      Tasks: 2 (limit: 8673)
+     Memory: 520.0K (peak: 1.5M)
+        CPU: 45.036s
+     CGroup: /system.slice/ip2oled_monitor_bonnet.service
+             └─1354 /usr/local/bin/rover_monitor_12
+
+Dec 27 09:56:26 rover systemd[1]: Started ip2oled_monitor_bonnet.service - ip2oled monitor bonnet.
+(venv) jerryo@rover:~$ 
+
+============================  ROS2 start ================================================
+
+(venv) jerryo@rover:~$ sudo systemctl status ip2oled_monitor_bonnet.service
+● ip2oled_monitor_bonnet.service - ip2oled monitor bonnet
+     Loaded: loaded (/etc/systemd/system/ip2oled_monitor_bonnet.service; enabled; preset: enabled)
+     Active: active (running) since Sat 2025-12-27 09:56:26 PST; 3min 6s ago
+   Main PID: 1354 (rover_monitor_1)
+      Tasks: 2 (limit: 8673)
+     Memory: 15.8M (peak: 37.7M)
+        CPU: 2min 15.575s
+     CGroup: /system.slice/ip2oled_monitor_bonnet.service
+             └─1354 /usr/local/bin/rover_monitor_12
+
+Dec 27 09:56:26 rover systemd[1]: Started ip2oled_monitor_bonnet.service - ip2oled monitor bonnet.
+Dec 27 09:59:08 rover rover_monitor_12[1354]: Running on a Raspberry Pi.
+Dec 27 09:59:08 rover rover_monitor_12[1354]: ina260 ID 0x5449 Match 0x5449
+Dec 27 09:59:08 rover rover_monitor_12[1354]: Sound: ON (playing...)
+Dec 27 09:59:08 rover rover_monitor_12[1354]: Sound: OFF (paused)
+Dec 27 09:59:08 rover rover_monitor_12[1354]: Sound: ON (playing...)
+Dec 27 09:59:08 rover rover_monitor_12[1354]: Sound: OFF (paused)
+Dec 27 09:59:08 rover rover_monitor_12[1354]: RS Button pressed: ??
+Dec 27 09:59:11 rover rover_monitor_12[2293]: Package 'osr_bringup' not found: "package 'osr_bringup' not found, searching: ['/opt/ros/jazzy>
+
+(venv) jerryo@rover:~$ 
+
+===================== ROS2 stop ===============================
+
+(venv) jerryo@rover:~$ 
+(venv) jerryo@rover:~$ sudo systemctl status ip2oled_monitor_bonnet.service
+● ip2oled_monitor_bonnet.service - ip2oled monitor bonnet
+     Loaded: loaded (/etc/systemd/system/ip2oled_monitor_bonnet.service; enabled; preset: enabled)
+     Active: active (running) since Sat 2025-12-27 09:56:26 PST; 5min ago
+   Main PID: 1354 (rover_monitor_1)
+      Tasks: 2 (limit: 8673)
+     Memory: 16.0M (peak: 37.7M)
+        CPU: 4min 12.161s
+     CGroup: /system.slice/ip2oled_monitor_bonnet.service
+             └─1354 /usr/local/bin/rover_monitor_12
+
+Dec 27 09:59:08 rover rover_monitor_12[1354]: ina260 ID 0x5449 Match 0x5449
+Dec 27 09:59:08 rover rover_monitor_12[1354]: Sound: ON (playing...)
+Dec 27 09:59:08 rover rover_monitor_12[1354]: Sound: OFF (paused)
+Dec 27 09:59:08 rover rover_monitor_12[1354]: Sound: ON (playing...)
+Dec 27 09:59:08 rover rover_monitor_12[1354]: Sound: OFF (paused)
+Dec 27 09:59:08 rover rover_monitor_12[1354]: RS Button pressed: ??
+Dec 27 09:59:11 rover rover_monitor_12[2293]: Package 'osr_bringup' not found: "package 'osr_bringup' not found, searching: ['/opt/ros/jazzy']"
+Dec 27 10:00:54 rover rover_monitor_12[1354]: Start Rover
+Dec 27 10:00:54 rover rover_monitor_12[1354]: 'start_rover.sh' script finished.
+Dec 27 10:00:54 rover rover_monitor_12[1354]: RS Button pressed: ??
+(venv) jerryo@rover:~$ 
+
+
