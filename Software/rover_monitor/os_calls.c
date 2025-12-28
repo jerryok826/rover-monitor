@@ -9,10 +9,17 @@
 int start_rover(void)
 {
     int system_call_status = 0;
-    const char* ros2_start_cmd = "/bin/bash -c 'source /opt/ros/jazzy/setup.bash; ros2 launch osr_bringup osr_launch.py &'";
+//    const char* ros2_start_cmd = "/bin/bash -c 'source /opt/ros/jazzy/setup.bash; ros2 launch osr_bringup osr_launch.py &'";
+//   const char* ros2_start_cmd = "/bin/bash -c 'source /opt/ros/jazzy/setup.bash; ros2 launch osr_bringup osr_launch.py '";
+//    const char *ros2_start_cmd = "/bin/bash -c 'source /opt/ros/jazzy/setup.bash && ros2 launch osr_bringup osr_launch.py'";
+    const char *ros2_start_cmd = "/bin/bash -c 'source /opt/ros/jazzy/setup.bash && source /home/jerryo/osr_ws/install/setup.bash && ros2 launch osr_bringup osr_launch.py'";
 
-    system_call_status = system(ros2_start_cmd);
-    return system_call_status;
+    int result = system(ros2_start_cmd);
+    if (result == -1) {
+        perror("Failed to execute system call");
+        return 1;
+    }
+    return result;
 }
 
 int stop_rover(void)
@@ -84,8 +91,8 @@ int main(){
         printf("Not running on a Raspberry Pi.\n");
     }
 
-  stop_rover();
-
+//  stop_rover();
+  start_rover();
   return 0; 
 }
 #endif
