@@ -91,5 +91,45 @@ Dec 27 10:00:54 rover rover_monitor_12[1354]: Start Rover
 Dec 27 10:00:54 rover rover_monitor_12[1354]: 'start_rover.sh' script finished.
 Dec 27 10:00:54 rover rover_monitor_12[1354]: RS Button pressed: ??
 (venv) jerryo@rover:~$ 
+=======================================================
 
+1. cd ~/rover_monitor
+2. nano os_calls.c
+3.  make
+4. gcc -O2 -o rover_monitor_12 rover_monitor_12.c ina260.c os_calls.c -lgpiod
+   Build: gcc -O2 -o rover_monitor_12 rover_monitor_12.c ina260.c os_calls.c -lgpiod
+
+5. sudo systemctl stop ip2oled_monitor_bonnet.service
+[sudo] password for jerryo: 
+Sorry, try again.
+[sudo] password for jerryo: 
+6. sudo cp rover_monitor_12 /usr/local/bin/
+7 sudo systemctl start ip2oled_monitor_bonnet.service
+
+8. sudo systemctl status ip2oled_monitor_bonnet.service
+=======================================================
+
+(venv) jerryo@rover:~/rover_monitor$ sudo systemctl status ip2oled_monitor_bonnet.service
+[sudo] password for jerryo: 
+● ip2oled_monitor_bonnet.service - ip2oled monitor bonnet
+     Loaded: loaded (/etc/systemd/system/ip2oled_monitor_bonnet.service; enabled; preset: enabled)
+     Active: active (running) since Mon 2025-12-29 09:27:08 PST; 5min ago
+   Main PID: 1359 (rover_monitor_1)
+      Tasks: 2 (limit: 8673)
+     Memory: 85.8M (peak: 270.2M)
+        CPU: 4min 47.803s
+     CGroup: /system.slice/ip2oled_monitor_bonnet.service
+             └─1359 /usr/local/bin/rover_monitor_12
+
+Dec 29 09:30:21 rover rover_monitor_12[2193]: [roboclaw_wrapper-1] [DEBUG] [1767029421.492903437] [roboclaw_wrapper]: Drive command callback received: osr_interfaces.msg.CommandDrive(left_front_vel=0.0, left_middle_vel=0.0, left_back_vel=0.0, right_f>
+Dec 29 09:30:21 rover rover_monitor_12[2193]: [roboclaw_wrapper-1] [DEBUG] [1767029421.508416240] [roboclaw_wrapper]: Drive command callback received: osr_interfaces.msg.CommandDrive(left_front_vel=0.0, left_middle_vel=0.0, left_back_vel=0.0, right_f>
+Dec 29 09:30:21 rover rover_monitor_12[2193]: [roboclaw_wrapper-1] [DEBUG] [1767029421.540513179] [roboclaw_wrapper]: Drive command callback received: osr_interfaces.msg.CommandDrive(left_front_vel=0.0, left_middle_vel=0.0, left_back_vel=0.0, right_f>
+Dec 29 09:30:21 rover rover_monitor_12[2193]: [roboclaw_wrapper-1] [DEBUG] [1767029421.549293904] [roboclaw_wrapper]: Drive command callback received: osr_interfaces.msg.CommandDrive(left_front_vel=0.0, left_middle_vel=0.0, left_back_vel=0.0, right_f>
+Dec 29 09:30:21 rover rover_monitor_12[2193]: [roboclaw_wrapper-1] [DEBUG] [1767029421.621427619] [roboclaw_wrapper]: Drive command callback received: osr_interfaces.msg.CommandDrive(left_front_vel=0.0, left_middle_vel=0.0, left_back_vel=0.0, right_f>
+Dec 29 09:30:23 rover rover_monitor_12[2193]: [roboclaw_wrapper-1] [DEBUG] [1767029423.714709870] [roboclaw_wrapper]: Idling: ramping down velocity to zero
+Dec 29 09:30:25 rover rover_monitor_12[2193]: [roboclaw_wrapper-1] [DEBUG] [1767029425.840359197] [roboclaw_wrapper]: Idling: full stopping motors
+Dec 29 09:30:30 rover rover_monitor_12[1359]: Start Rover
+Dec 29 09:30:30 rover rover_monitor_12[1359]: 'start_rover.sh' script finished.
+Dec 29 09:30:30 rover rover_monitor_12[1359]: RS Button pressed: ??
+(venv) jerryo@rover:~/rover_monitor$ 
 
