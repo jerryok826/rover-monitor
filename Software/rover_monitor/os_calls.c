@@ -12,7 +12,10 @@ int start_rover(void)
 //    const char* ros2_start_cmd = "/bin/bash -c 'source /opt/ros/jazzy/setup.bash; ros2 launch osr_bringup osr_launch.py &'";
 //   const char* ros2_start_cmd = "/bin/bash -c 'source /opt/ros/jazzy/setup.bash; ros2 launch osr_bringup osr_launch.py '";
 //    const char *ros2_start_cmd = "/bin/bash -c 'source /opt/ros/jazzy/setup.bash && ros2 launch osr_bringup osr_launch.py'";
-    const char *ros2_start_cmd = "/bin/bash -c 'source /opt/ros/jazzy/setup.bash && source /home/jerryo/osr_ws/install/setup.bash && ros2 launch osr_bringup osr_launch.py'";
+//    const char *ros2_start_cmd = "/bin/bash -c 'source /opt/ros/jazzy/setup.bash && source /home/jerryo/osr_ws/install/setup.bash && ros2 launch osr_bringup osr_launch.py'";
+    // The setup,bash is required to setup the ROS 2 Jazzy environment
+    // The "&" is required so system returns and let ROS2 run in the background. 
+    const char *ros2_start_cmd = "/bin/bash -c 'source /home/jerryo/osr_ws/install/setup.bash && ros2 launch osr_bringup osr_launch.py &'";
 
     int result = system(ros2_start_cmd);
     if (result == -1) {
