@@ -28,7 +28,7 @@
 
 #define _GNU_SOURCE
 #include <math.h>
-#include <gpiod.h>
+#include <gpiod.h>  // libgpiod v1.6.3
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -51,6 +51,7 @@
 #include <pthread.h>            // Required for pthreads
 #include "ina260.h"
 #include "os_calls.h"
+
 #define VOLATGE_HIGH_LIMIT (16000.0)    // 16 volts
 #define VOLATGE_LOW_LIMIT  (12000.0)    // 12 volts
 #define CURRENT_HIGH_LIMIT  (7000.0)    // 7 amps
@@ -725,32 +726,23 @@ ina260_setup ()
 // Using atomic ensures visibility across threads without a mutex
 atomic_bool sound_enabled = false;
 
-// Function that runs in the background thread
+// Sound Function runs in a background thread
 void *
 background_sound_thread (void *arg)
 {
   while (1) {
     while (atomic_load (&sound_enabled)) {
-      // Placeholder for sound playback logic
-      // In a real application, you would check sound_enabled frequently
-      // (e.g., in an audio buffer loop or before a blocking PlaySound call).
-      printf ("Sound: ON (playing...)\n");
-      gpio_set_red_led (1);
-      gpio_set_bell (1);
+      gpio_set_red_led (1); // Flash fault led
+      gpio_set_bell (1);    // Buzzer sound
 
-      // Simulate sound work
       usleep (300000);
       // } else {
-      printf ("Sound: OFF (paused)\n");
       gpio_set_red_led (0);
       gpio_set_bell (0);
       // Sleep briefly to prevent a busy-wait loop when sound is off
       usleep (300000);
     }
-//        usleep(10000); // idea time between actions
 
-    // Add an exit condition if needed, also using an atomic flag
-    // if (atomic_load(&should_exit)) break; 
   }
   return NULL;
 }
@@ -773,7 +765,7 @@ main (void)
 
   // Create the background sound thread
   if (pthread_create (&sound_tid, NULL, background_sound_thread, NULL) != 0) {
-    perror ("pthread_create");
+    perror ("pthread_create error");
     return 1;
   }
 
@@ -802,18 +794,6 @@ main (void)
                BUTTON_PIN, LED_PIN, OLED_I2C_DEV, OLED_ADDR);
 #endif
 
-#if 0
-  // Startup LED blink for 3s (visible boot indicator)
-  for (int i = 0; i < 6; ++i) {
-    gpio_set_green_led (i % 2);
-    gpio_set_red_led (i % 2);
-    gpio_set_bell (i % 2);
-    struct timespec ts = {.tv_sec = 0,.tv_nsec = 250 * 1000 * 1000 };
-    nanosleep (&ts, NULL);
-    if (!keepRunning)
-      break;
-  }
-#endif
   // Startup LED blink & bell
   sound_enabled = true;
   sleep (1);
@@ -1007,7 +987,7 @@ main (void)
       static int counter = 0;
       counter = (counter + 1) % 10;
       if (counter == 0)
-        draw_status_screen (hostname,last_ip, last_ssid, last_tempC, upbuf, 1200.0, 500.0);
+        draw_status_screen (hostname,last_ip, last_ssid, last_tempC, upbuf, voltage_mv, current_ma); // 1200.0, 500.0);
     }
     tick_cntr++;
   }
