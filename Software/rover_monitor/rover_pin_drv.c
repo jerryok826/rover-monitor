@@ -119,7 +119,7 @@ rover_pin_drv_shutdown(void)
 }
 
 
-#if 1
+#if 0
 /*
  * ------------------------------------------------------------
  * Minimal unit-test main() for rover_pin_drv.c
