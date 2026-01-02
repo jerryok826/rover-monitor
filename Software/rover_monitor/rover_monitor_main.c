@@ -23,7 +23,6 @@
 //
 // systemd service example is provided after the code.
 
-
 // indent -gnu -br -cli2 -lp -nut -l100 rover_monitor_12.c
 
 #define _GNU_SOURCE
@@ -51,6 +50,7 @@
 #include <pthread.h>            // Required for pthreads
 #include "ina260.h"
 #include "os_calls.h"
+#include "rover_pin_drv.h"
 
 #define VOLATGE_HIGH_LIMIT (16000.0)    // 16 volts
 #define VOLATGE_LOW_LIMIT  (12000.0)    // 12 volts
@@ -58,11 +58,16 @@
 #define OLED_I2C_DEV   "/dev/i2c-1"
 #define OLED_ADDR      0x3c     // 0x3C
 #define CHIPNAME       "gpiochip0"
-#define SHUTDOWN_BUTTON_PIN 19
+
+// gpio outputs
 #define GREEN_LED_PIN       13
 #define RED_LED_PIN         20
 #define ALARM_PIN           16
+
+// gpio inputs
+#define SHUTDOWN_BUTTON_PIN 19
 #define RUN_STOP_BUTTON_PIN 21
+
 static int i2c_ina260_fd;
 static int ina260_online = 0;
 static int rover_run_state = 0;
@@ -78,7 +83,6 @@ simple_logf (const char *fmt, ...)
   fflush (stdout);
   va_end (ap);
 }
-
 
 // ======== OLED / SSD1306 driver ========
 #include "ssd1306.h"
@@ -203,11 +207,9 @@ sigint_handler (int sig)
 }
 
 static struct gpiod_chip *chip = NULL;
+
 static struct gpiod_line *btn_line = NULL;
 static struct gpiod_line *rs_btn_line = NULL;
-static struct gpiod_line *green_led_line = NULL;
-static struct gpiod_line *red_led_line = NULL;
-static struct gpiod_line *bell_line = NULL;
 
 static int
 gpio_init (void)
@@ -217,6 +219,14 @@ gpio_init (void)
     perror ("gpiod_chip_open_by_name");
     return -1;
   }
+
+if (rover_pin_drv_init(chip, GREEN_LED_PIN, RED_LED_PIN, ALARM_PIN, "led_test", 0) < 0) {
+    fprintf(stderr, "rover_pin_drv_init() failed\n");
+    fprintf(stderr, "Try: \"sudo systemctl stop ip2oled_monitor_bonnet.service\"\n");
+    gpiod_chip_close(chip);
+    exit(EXIT_FAILURE);  // fix this jerry
+    return 1;
+}
 
   btn_line = gpiod_chip_get_line (chip, SHUTDOWN_BUTTON_PIN);
   if (!btn_line) {
@@ -238,75 +248,13 @@ gpio_init (void)
     return -1;
   }
 
-  green_led_line = gpiod_chip_get_line (chip, GREEN_LED_PIN);
-  if (!green_led_line) {
-    perror ("get_green_line(led)");
-    return -1;
-  }
-  if (gpiod_line_request_output (green_led_line, "pi_oled_shutdown_monitor", 1) < 0) {
-    perror ("request_output(green led)");
-    return -1;
-  }
-
-  red_led_line = gpiod_chip_get_line (chip, RED_LED_PIN);
-  if (!red_led_line) {
-    perror ("get_red_line(led)");
-    return -1;
-  }
-  if (gpiod_line_request_output (red_led_line, "pi_oled_shutdown_monitor", 1) < 0) {
-    perror ("request_output(red_led)");
-    return -1;
-  }
-
-  bell_line = gpiod_chip_get_line (chip, ALARM_PIN);
-  if (!bell_line) {
-    perror ("get_bell_line(led)");
-    return -1;
-  }
-  if (gpiod_line_request_output (bell_line, "pi_oled_shutdown_monitor", 1) < 0) {
-    perror ("request_output(bell_led)");
-    return -1;
-  }
-
   return 0;
-}
-
-void
-gpio_set_green_led (int val)
-{
-  if (green_led_line)
-    gpiod_line_set_value (green_led_line, val ? 1 : 0);
-}
-
-void
-gpio_set_red_led (int val)
-{
-  if (red_led_line)
-    gpiod_line_set_value (red_led_line, val ? 1 : 0);
-}
-
-void
-gpio_set_bell (int val)
-{
-  if (bell_line)
-    gpiod_line_set_value (bell_line, val ? 1 : 0);
 }
 
 static void
 gpio_cleanup (void)
 {
-  if (green_led_line) {
-    gpiod_line_release (green_led_line);
-    green_led_line = NULL;
-  }
-  if (red_led_line) {
-    gpiod_line_release (red_led_line);
-    red_led_line = NULL;
-  }
-  if (bell_line) {
-    gpiod_line_release (bell_line);
-    bell_line = NULL;
-  }
+
   if (btn_line) {
     gpiod_line_release (btn_line);
     btn_line = NULL;
@@ -418,13 +366,13 @@ background_sound_thread (void *arg)
 {
   while (1) {
     while (atomic_load (&sound_enabled)) {
-      gpio_set_red_led (1); // Flash fault led
-      gpio_set_bell (1);    // Buzzer sound
+      rover_pin_drv_set_red(1);
+      rover_pin_drv_set_buzzer(1);
 
       usleep (300000);
       // } else {
-      gpio_set_red_led (0);
-      gpio_set_bell (0);
+      rover_pin_drv_set_red(0);
+      rover_pin_drv_set_buzzer(0);
       // Sleep briefly to prevent a busy-wait loop when sound is off
       usleep (300000);
     }
@@ -485,10 +433,9 @@ main (void)
   sleep (1);
   sound_enabled = false;
 
-  // Steady on while running
-  gpio_set_green_led (0);
-  gpio_set_red_led (0);
-  gpio_set_bell (0);
+  rover_pin_drv_set_green(0);
+  rover_pin_drv_set_red(0);
+  rover_pin_drv_set_buzzer(0);
 
   char ip[64] = { 0 }, last_ip[64] = { 0 };
   char ssid[64] = { 0 }, last_ssid[64] = { 0 };
@@ -531,12 +478,17 @@ main (void)
           simple_logf ("Button pressed: initiating shutdown");
           draw_message_center ("Shutting down...");
           // turn off LED to indicate it's safe to cut power *after* OS halts
-          gpio_set_green_led (1);
-          gpio_set_red_led (1);
-          gpio_set_bell (0);
+          rover_pin_drv_set_green(1);
+          rover_pin_drv_set_red(1);
+          rover_pin_drv_set_buzzer(1);
+          usleep (400 * 1000);
 
           // brief delay so the message is visible
-          usleep (800 * 1000);
+          rover_pin_drv_set_green(0);
+          rover_pin_drv_set_red(0);
+          rover_pin_drv_set_buzzer(0);
+          usleep (400 * 1000);
+
           // Request shutdown
           int s = system ("shutdown -h now");
           break;
@@ -567,7 +519,7 @@ main (void)
             stop_rover();
 
             printf ("'stop_rover.sh' script finished.\n");
-            gpio_set_green_led (0);
+            rover_pin_drv_set_green(0);
           }
           else {
             printf ("Start Rover\n");
@@ -578,7 +530,7 @@ main (void)
             start_rover ();
 
             printf ("'start_rover.sh' script finished.\n");
-            gpio_set_green_led (1);
+            rover_pin_drv_set_green(1);
           }
 
           // brief delay so the message is visible
@@ -679,6 +631,10 @@ main (void)
   }
 
   gpio_cleanup ();
+  rover_pin_drv_shutdown();
+
+  ssd1306_shutdown();
+
 // if (i2c_fd >= 0)
 //    close (i2c_fd);
   return 0;

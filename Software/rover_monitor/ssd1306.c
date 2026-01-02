@@ -26,7 +26,6 @@
 static int i2c_fd = -1;
 static uint8_t oled_buf[SSD1306_BUF_SZ];
 
-
 //static int i2c_fd = -1;
 // static uint8_t oled_buf[SSD1306_BUF_SZ];
 
