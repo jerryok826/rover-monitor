@@ -23,11 +23,11 @@
 //
 // systemd service example is provided after the code.
 
-// indent -gnu -br -cli2 -lp -nut -l100 rover_monitor_12.c
+// indent -gnu -br -cli2 -lp -nut -l100 rover_monitor_main.c
 
 #define _GNU_SOURCE
 #include <math.h>
-#include <gpiod.h>  // libgpiod v1.6.3
+#include <gpiod.h>              // libgpiod v1.6.3
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -48,9 +48,12 @@
 #include <unistd.h>             // For sleep() in the main thread
 #include <stdatomic.h>          // Required for atomic operations
 #include <pthread.h>            // Required for pthreads
+
 #include "ina260.h"
 #include "os_calls.h"
 #include "rover_pin_drv.h"
+#include "buttons.h"
+#include "ssd1306.h"
 
 #define VOLATGE_HIGH_LIMIT (16000.0)    // 16 volts
 #define VOLATGE_LOW_LIMIT  (12000.0)    // 12 volts
@@ -72,6 +75,9 @@ static int i2c_ina260_fd;
 static int ina260_online = 0;
 static int rover_run_state = 0;
 
+void process_shutdown (int pin_num);
+void process_run_stop_button (int pin_num);
+
 // ======== Simple logging ========
 static void
 simple_logf (const char *fmt, ...)
@@ -84,25 +90,22 @@ simple_logf (const char *fmt, ...)
   va_end (ap);
 }
 
-// ======== OLED / SSD1306 driver ========
-#include "ssd1306.h"
-
 // ======== System info helpers ========
 static int
 get_hostname (char *out, size_t outlen)
 {
   int rc = -1;
 
-  memset(out,0,outlen);
-
+  memset (out, 0, outlen);
   // Call gethostname() to retrieve the name
-  if (gethostname(out, outlen) == 0) {
+  if (gethostname (out, outlen) == 0) {
 //       printf("Local Hostname: %s\n", out);
-        rc = 0;
-  } else {
-        // If gethostname fails, print an error message
-        perror("gethostname failed");
-        return rc;
+    rc = 0;
+  }
+  else {
+    // If gethostname fails, print an error message
+    perror ("gethostname failed");
+    return rc;
   }
   return rc;
 }
@@ -207,9 +210,13 @@ sigint_handler (int sig)
 }
 
 static struct gpiod_chip *chip = NULL;
-
 static struct gpiod_line *btn_line = NULL;
 static struct gpiod_line *rs_btn_line = NULL;
+
+static void cb_print(int pin) {
+    printf("CB: GPIO %d pressed\n", pin);
+    fflush(stdout);
+}
 
 static int
 gpio_init (void)
@@ -220,34 +227,21 @@ gpio_init (void)
     return -1;
   }
 
-if (rover_pin_drv_init(chip, GREEN_LED_PIN, RED_LED_PIN, ALARM_PIN, "led_test", 0) < 0) {
-    fprintf(stderr, "rover_pin_drv_init() failed\n");
-    fprintf(stderr, "Try: \"sudo systemctl stop ip2oled_monitor_bonnet.service\"\n");
-    gpiod_chip_close(chip);
-    exit(EXIT_FAILURE);  // fix this jerry
+  if (rover_pin_drv_init (chip, GREEN_LED_PIN, RED_LED_PIN, ALARM_PIN, "led_test", 0) < 0) {
+    fprintf (stderr, "rover_pin_drv_init() failed\n");
+    fprintf (stderr, "Try: \"sudo systemctl stop ip2oled_monitor_bonnet.service\"\n");
+    gpiod_chip_close (chip);
+    exit (EXIT_FAILURE);        // fix this jerry
     return 1;
-}
-
-  btn_line = gpiod_chip_get_line (chip, SHUTDOWN_BUTTON_PIN);
-  if (!btn_line) {
-    perror ("get_line(button)");
-    return -1;
-  }
-  if (gpiod_line_request_both_edges_events (btn_line, "pi_oled_shutdown_monitor") < 0) {
-    perror ("request_both_edges_events(button)");
-    return -1;
   }
 
-  rs_btn_line = gpiod_chip_get_line (chip, RUN_STOP_BUTTON_PIN);
-  if (!rs_btn_line) {
-    perror ("get_line(rs_button)");
-    return -1;
+  if (buttons_init(SHUTDOWN_BUTTON_PIN, RUN_STOP_BUTTON_PIN) != 0) {
+      fprintf(stderr, "buttons_init failed\n");
+      return 1;
+  } else {
+     button_callback(19, process_shutdown);
+     button_callback(21, process_run_stop_button);  
   }
-  if (gpiod_line_request_both_edges_events (rs_btn_line, "pi_oled_shutdown_monitor") < 0) {
-    perror ("request_both_edges_events(button)");
-    return -1;
-  }
-
   return 0;
 }
 
@@ -273,8 +267,8 @@ char status_line[32] = { "Status: Okay" };
 
 // ======== UI helpers ========
 static void
-draw_status_screen (const char *hostname, const char *ip, const char *ssid, double tempC, const char *uptime,
-                    double voltage_mv, double current_ma)
+draw_status_screen (const char *hostname, const char *ip, const char *ssid, double tempC,
+                    const char *uptime, double voltage_mv, double current_ma)
 {
   ssd1306_clear ();
   int y = 0;
@@ -312,9 +306,10 @@ draw_status_screen (const char *hostname, const char *ip, const char *ssid, doub
 
   char rbuf[32];
   if (rover_run_state) {
-     snprintf (rbuf, sizeof (rbuf), "%s", "Rover App:  On");
-  } else {
-     snprintf (rbuf, sizeof (rbuf), "%s", "Rover App:  Off");
+    snprintf (rbuf, sizeof (rbuf), "%s", "Rover App:  On");
+  }
+  else {
+    snprintf (rbuf, sizeof (rbuf), "%s", "Rover App:  Off");
   }
   draw_text_prop (0, y, rbuf);
   y += 12;
@@ -366,19 +361,66 @@ background_sound_thread (void *arg)
 {
   while (1) {
     while (atomic_load (&sound_enabled)) {
-      rover_pin_drv_set_red(1);
-      rover_pin_drv_set_buzzer(1);
+      rover_pin_drv_set_red (1);
+      rover_pin_drv_set_buzzer (1);
 
       usleep (300000);
       // } else {
-      rover_pin_drv_set_red(0);
-      rover_pin_drv_set_buzzer(0);
+      rover_pin_drv_set_red (0);
+      rover_pin_drv_set_buzzer (0);
       // Sleep briefly to prevent a busy-wait loop when sound is off
       usleep (300000);
     }
-
   }
   return NULL;
+}
+
+void
+process_shutdown (int pin_num)
+{
+  simple_logf ("Button pressed: initiating shutdown");
+  draw_message_center ("Shutting down...");
+  // turn off LED to indicate it's safe to cut power *after* OS halts
+  rover_pin_drv_set_green (1);
+  rover_pin_drv_set_red (1);
+  rover_pin_drv_set_buzzer (1);
+
+  stop_rover ();  // Make sure the rovers motors are stop
+  usleep (400 * 1000);
+
+  // brief delay so the message is visible
+  rover_pin_drv_set_green (0);
+  rover_pin_drv_set_red (0);
+  rover_pin_drv_set_buzzer (0);
+  usleep (400 * 1000);
+
+  // Request shutdown
+  int s = system ("shutdown -h now");
+}
+
+void
+process_run_stop_button (int pin_num)
+{
+  simple_logf ("RS Button pressed: ??");
+  draw_message_center ("Bell button pressed");
+  // Toggle Rover run state
+  if (rover_run_state != 0) {
+    printf ("Stop Rover\n");
+    rover_run_state = 0;
+    stop_rover ();
+
+    printf ("'stop_rover.sh' script finished.\n");
+    rover_pin_drv_set_green (0);
+  }
+  else {
+    printf ("Start Rover\n");
+    rover_run_state = 1;
+    stop_rover(); // make sure everthing thing is stopped
+    usleep (10 * 1000);         // 10 millsec ?
+
+    rover_pin_drv_set_green (1);
+    start_rover ();
+  }
 }
 
 // ======== Main loop ========
@@ -388,15 +430,15 @@ main (void)
   signal (SIGINT, sigint_handler);
   signal (SIGTERM, sigint_handler);
 
-  if (is_raspberry_pi()) {
-        printf("Running on a Raspberry Pi.\n");
-  } else {
-        printf("Not running on a Raspberry Pi. Bye\n");
-        return 1;
+  if (is_raspberry_pi ()) {
+    printf ("Running on a Raspberry Pi.\n");
+  }
+  else {
+    printf ("Not running on a Raspberry Pi. Bye\n");
+    return 1;
   }
 
   pthread_t sound_tid;
-
   // Create the background sound thread
   if (pthread_create (&sound_tid, NULL, background_sound_thread, NULL) != 0) {
     perror ("pthread_create error");
@@ -421,8 +463,7 @@ main (void)
   }
 
   char hostname[50];
-  get_hostname (hostname, sizeof(hostname));
-
+  get_hostname (hostname, sizeof (hostname));
 #if 0
   simple_logf ("Service started. Button GPIO%d, LED GPIO%d, OLED on %s addr 0x%02X",
                BUTTON_PIN, LED_PIN, OLED_I2C_DEV, OLED_ADDR);
@@ -433,9 +474,9 @@ main (void)
   sleep (1);
   sound_enabled = false;
 
-  rover_pin_drv_set_green(0);
-  rover_pin_drv_set_red(0);
-  rover_pin_drv_set_buzzer(0);
+  rover_pin_drv_set_green (0);
+  rover_pin_drv_set_red (0);
+  rover_pin_drv_set_buzzer (0);
 
   char ip[64] = { 0 }, last_ip[64] = { 0 };
   char ssid[64] = { 0 }, last_ssid[64] = { 0 };
@@ -443,7 +484,6 @@ main (void)
   float voltage_mv = 0.0, current_ma = 0.0;
   char upbuf[32] = { 0 };
   int tick_cntr = 0;
-//  int rover_run_state = 0;
 
   // Initial read
   get_ip_address (ip, sizeof ip);
@@ -462,88 +502,6 @@ main (void)
   while (keepRunning) {
     // Periodic screen refresh
     bool changed = false;
-    // Wait up to 1s for a button event
-    struct timespec timeout = {.tv_sec = 1,.tv_nsec = 0 };
-
-    int event_btn_1 = gpiod_line_event_wait (btn_line, &timeout);
-    if (event_btn_1 < 0) {
-      perror ("event_btn_1 gpiod_line_event_wait");
-      break;
-    }
-    if (event_btn_1 == 1) {
-      // Read and process event (debounced: only act on falling edge and ignore repeats for 500ms)
-      struct gpiod_line_event ev;
-      if (gpiod_line_event_read (btn_line, &ev) == 0) {
-        if (ev.event_type == GPIOD_LINE_EVENT_FALLING_EDGE) {
-          simple_logf ("Button pressed: initiating shutdown");
-          draw_message_center ("Shutting down...");
-          // turn off LED to indicate it's safe to cut power *after* OS halts
-          rover_pin_drv_set_green(1);
-          rover_pin_drv_set_red(1);
-          rover_pin_drv_set_buzzer(1);
-          usleep (400 * 1000);
-
-          // brief delay so the message is visible
-          rover_pin_drv_set_green(0);
-          rover_pin_drv_set_red(0);
-          rover_pin_drv_set_buzzer(0);
-          usleep (400 * 1000);
-
-          // Request shutdown
-          int s = system ("shutdown -h now");
-          break;
-        }
-      }
-      // simple debounce delay
-      usleep (150 * 1000);
-    }
-
-    struct timespec timeout2 = {.tv_sec = 1,.tv_nsec = 0 };
-    int event_btn_2 = gpiod_line_event_wait (rs_btn_line, &timeout2);
-    if (event_btn_2 < 0) {
-      perror ("event_btn_2 gpiod_line_event_wait");
-      break;
-    }
-    if (event_btn_2 == 1) {
-      // Read and process event (debounced: only act on falling edge and ignore repeats for 500ms)
-      struct gpiod_line_event ev;
-      int system_call_status = 0;
-      if (gpiod_line_event_read (rs_btn_line, &ev) == 0) {
-        if (ev.event_type == GPIOD_LINE_EVENT_FALLING_EDGE) {
-          simple_logf ("RS Button pressed: ??");
-          draw_message_center ("Bell button pressed");
-          // Toggle Rover run state
-          if (rover_run_state != 0) {
-            printf ("Stop Rover\n");
-            rover_run_state = 0;
-            stop_rover();
-
-            printf ("'stop_rover.sh' script finished.\n");
-            rover_pin_drv_set_green(0);
-          }
-          else {
-            printf ("Start Rover\n");
-            rover_run_state = 1;
-//                       stop_rover(); // make sure everthing thing is stopped
-            usleep (10 * 1000); // 10 millsec ?
-
-            start_rover ();
-
-            printf ("'start_rover.sh' script finished.\n");
-            rover_pin_drv_set_green(1);
-          }
-
-          // brief delay so the message is visible
-          usleep (800 * 1000);
-        }
-      }
-      // simple debounce delay
-      usleep (150 * 1000);
-      changed = true;
-    }
-
-    // Periodic screen refresh
-//        bool changed = false;
 
     if (get_ip_address (ip, sizeof ip) == 0) {
       if (strcmp (ip, last_ip) != 0) {
@@ -618,24 +576,21 @@ main (void)
     }
 
     if (changed) {
-      draw_status_screen (hostname,last_ip, last_ssid, last_tempC, upbuf, voltage_mv, current_ma);
+      draw_status_screen (hostname, last_ip, last_ssid, last_tempC, upbuf, voltage_mv, current_ma);
     }
     else {
       // Still refresh once every ~10 seconds to keep uptime current
       static int counter = 0;
       counter = (counter + 1) % 10;
       if (counter == 0)
-        draw_status_screen (hostname,last_ip, last_ssid, last_tempC, upbuf, voltage_mv, current_ma); // 1200.0, 500.0);
+        draw_status_screen (hostname, last_ip, last_ssid, last_tempC, upbuf, voltage_mv, current_ma);   // 1200.0, 500.0);
     }
     tick_cntr++;
+    usleep (300 * 1000);
   }
 
   gpio_cleanup ();
-  rover_pin_drv_shutdown();
-
-  ssd1306_shutdown();
-
-// if (i2c_fd >= 0)
-//    close (i2c_fd);
+  rover_pin_drv_shutdown ();
+  ssd1306_shutdown ();
   return 0;
 }
