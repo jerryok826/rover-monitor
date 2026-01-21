@@ -24,7 +24,7 @@ Monitor Features:
 5. Monitor beeps when system has complteted booting and ready for operation.
 
 ### Project Status
-Basically complete. Below is the original prototype version.
+Basically complete, except for a fault event detail line to the display. Below is the original prototype version.
 
 ![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/prototype_1.jpeg)
 
