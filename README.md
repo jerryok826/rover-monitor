@@ -4,12 +4,13 @@ Rover monitor is a simple info display for the JPL's open-source-rover project
 ![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/rover_lawn_1.jpeg)
 
 # Rover info monitor.
+### Rover ROS2 Off
 ![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/rover_ros2_off.jpeg)
 
 ### Rover ROS2 Running
 ![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/rover_ros2_on.jpeg)
 
-# Voltage fault: Below 12.0 V
+### Voltage fault: Below 12.0 V
 ![Alt text](https://github.com/jerryok826/rover-monitor/blob/main/images/voltage_fault.jpeg)
 
 ## Rover Monitor Project Description
